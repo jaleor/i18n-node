@@ -1068,8 +1068,6 @@ module.exports = (function() {
    */
   var read = function(locale, parentLocale) {
 
-    logDebug('READ ' + locale + ' ' + parentLocale);
-
     var localeFile = {},
       file = getStorageFilePath(locale);
     try {
@@ -1080,43 +1078,23 @@ module.exports = (function() {
 
         if (parentLocale) {
 
-          logDebug('agrego fallback ' + locale + ' de padre ' + parentLocale);
-
-          //locales[locale] = locales[parentLocale];
+          logDebug(locale + ' has ' + parentLocale + ' as fallback');
           locales[locale] = JSON.parse(JSON.stringify(locales[parentLocale]));
-
           Object.assign(locales[locale], JSON.parse(localeFile));
-          //locales[locale] = JSON.parse(localeFile);
 
-          if (locale=='pt-br') {
-            logDebug(JSON.parse(localeFile));
-            //logDebug(locales[locale]);
-          }
-
-        } else if (!parentLocale) {
+        } else {
 
           locales[locale] = JSON.parse(localeFile);
+          var fallbacksSwap = swap(fallbacks);
 
-          var fallbacksSwap = fallbacks;
-
-          //logDebug('fallbacks: ' + fallbacksSwap[locale]);
-
-          if (/*fallbacksSwap[locale]*/locale=='pt') {
-
-            logDebug(locale + ': tiene fallbacks ' + fallbacksSwap[locale]);
-            ['pt-pt', 'pt-br'].forEach(function(fallback) {
-              read(fallback, locale);
+          if (fallbacksSwap[locale]) {
+              //logDebug(locale + ' has fallbacks ' + fallbacksSwap[locale]);
+              fallbacksSwap[locale].forEach(function(fallbackLocale) {
+              read(fallbackLocale, locale);
             });
             
           }
         }
-        
-        /*if (locale=='pt-br') {
-          console.log("JSON.parse(localeFile);", JSON.parse(localeFile));
-          Object.assign(locales['pt'], JSON.parse(localeFile));
-        } else {
-          locales[locale] = JSON.parse(localeFile);
-        }*/
         
       } catch (parseError) {
         logError('unable to parse locales from file (maybe ' +
@@ -1200,6 +1178,19 @@ module.exports = (function() {
     }
     return filepath;
   };
+
+  function swap(json){
+
+    var ret = {};
+    for(var key in json){
+      if (json[key] in ret) {
+        ret[json[key]].push(key);
+      } else {
+        ret[json[key]] = [key];
+      }
+    }
+    return ret;
+  }
 
   /**
    * Logging proxies
