@@ -1066,7 +1066,10 @@ module.exports = (function() {
   /**
    * try reading a file
    */
-  var read = function(locale) {
+  var read = function(locale, parentLocale) {
+
+    logDebug('READ ' + locale + ' ' + parentLocale);
+
     var localeFile = {},
       file = getStorageFilePath(locale);
     try {
@@ -1074,7 +1077,47 @@ module.exports = (function() {
       localeFile = fs.readFileSync(file);
       try {
         // parsing filecontents to locales[locale]
-        locales[locale] = JSON.parse(localeFile);
+
+        if (parentLocale) {
+
+          logDebug('agrego fallback ' + locale + ' de padre ' + parentLocale);
+
+          //locales[locale] = locales[parentLocale];
+          locales[locale] = JSON.parse(JSON.stringify(locales[parentLocale]));
+
+          Object.assign(locales[locale], JSON.parse(localeFile));
+          //locales[locale] = JSON.parse(localeFile);
+
+          if (locale=='pt-br') {
+            logDebug(JSON.parse(localeFile));
+            //logDebug(locales[locale]);
+          }
+
+        } else if (!parentLocale) {
+
+          locales[locale] = JSON.parse(localeFile);
+
+          var fallbacksSwap = fallbacks;
+
+          //logDebug('fallbacks: ' + fallbacksSwap[locale]);
+
+          if (/*fallbacksSwap[locale]*/locale=='pt') {
+
+            logDebug(locale + ': tiene fallbacks ' + fallbacksSwap[locale]);
+            ['pt-pt', 'pt-br'].forEach(function(fallback) {
+              read(fallback, locale);
+            });
+            
+          }
+        }
+        
+        /*if (locale=='pt-br') {
+          console.log("JSON.parse(localeFile);", JSON.parse(localeFile));
+          Object.assign(locales['pt'], JSON.parse(localeFile));
+        } else {
+          locales[locale] = JSON.parse(localeFile);
+        }*/
+        
       } catch (parseError) {
         logError('unable to parse locales from file (maybe ' +
           file + ' is empty or invalid json?): ', parseError);
