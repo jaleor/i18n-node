@@ -1127,6 +1127,12 @@ module.exports = (function() {
       return;
     }
 
+    // don't write new locale for fallbacks
+    if (fallbacks[locale]) {
+      logDebug('Dont write new locale for fallback ' + locale);
+      return;
+    }
+
     // creating directory if necessary
     try {
       stats = fs.lstatSync(directory);
